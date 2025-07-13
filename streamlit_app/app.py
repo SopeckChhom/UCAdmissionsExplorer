@@ -1,17 +1,17 @@
-# streamlit_app.py
+# streamlit_app/app.py
 
 import streamlit as st
 import pandas as pd
-import os
-import sys
-
-# Load cleaning functions
+import os, sys
 sys.path.append(os.path.abspath('./scripts'))
+
 from clean_data import (
     load_and_clean_frosh_app_counts,
     load_and_clean_gpa_distribution,
     load_and_clean_ethnicity_data
 )
+from visualize import plot_gpa_distribution, plot_demographics_distribution
+
 
 st.set_page_config(page_title="UC Admissions Data Explorer", layout="wide")
 
@@ -26,24 +26,17 @@ if page == "GPA Distribution":
     df_gpa = load_and_clean_gpa_distribution()
 
     st.subheader("📈 GPA Distribution Over Time")
-    df_pct = df_gpa.copy()
-    total_by_year = df_pct.groupby('Fall term')['Applicants'].transform('sum')
-    df_pct['Percentage'] = df_pct['Applicants'] / total_by_year * 100
-    chart_data = df_pct.pivot(index='Fall term', columns='GPA Band', values='Percentage')
+    fig = plot_gpa_distribution(df_gpa)
+    st.pyplot(fig)
 
-    st.bar_chart(chart_data)
 
 # Demographics View
 elif page == "Demographics":
     df_eth = load_and_clean_ethnicity_data()
 
     st.subheader("👥 Applicants by Race/Ethnicity")
-    df_pct = df_eth.copy()
-    total = df_pct.groupby('Fall term')['Applicants'].transform('sum')
-    df_pct['Percentage'] = df_pct['Applicants'] / total * 100
-    chart_data = df_pct.pivot(index='Fall term', columns='Race/ethnicity', values='Percentage')
-
-    st.bar_chart(chart_data)
+    fig = plot_demographics_distribution(df_eth)
+    st.pyplot(fig)
 
 # Raw Data Viewer
 elif page == "Raw Data":
