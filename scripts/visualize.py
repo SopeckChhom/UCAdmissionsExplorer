@@ -8,6 +8,7 @@ import os
 PLOT_DIR = os.path.join(os.path.dirname(__file__), '..', 'outputs', 'plots')
 os.makedirs(PLOT_DIR, exist_ok=True)
 
+# SWITCHED to PLOTLY
 # plot gpa
 def plot_gpa_distribution(
     df: pd.DataFrame,
