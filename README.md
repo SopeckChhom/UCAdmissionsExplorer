@@ -18,3 +18,17 @@
 ---
 
 ## 📁 Project Structure
+
+UCAdmissionsExplorer/
+├── streamlit_app/ # Main app logic (app.py)
+├── scripts/ # Data cleaning + visualization functions
+├── data/ # Raw and cleaned CSVs
+├── outputs/ # Saved plots (optional)
+├── notebooks/ # EDA notebooks
+├── requirements.txt # Project dependencies
+└── README.md # You're reading it!
+
+## Devloper Info
+
+Sopeaq Chhom
+LinkedIn • GitHub
