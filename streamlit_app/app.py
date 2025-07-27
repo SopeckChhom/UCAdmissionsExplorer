@@ -20,7 +20,7 @@ from visualize import (
     plot_acceptance_rate
 )
 
-# -- Caching Data Loading ------------------------------------------------
+# Caching Data Loading
 @st.cache_data
 def get_gpa_df():
     return load_and_clean_gpa_distribution()
@@ -37,19 +37,19 @@ def get_app_admit_df():
 def get_frosh_app_df():
     return load_and_clean_frosh_app_counts()
 
-# -- Helpers ---------------------------------------------------------------
-
+# Helpers 
 def filter_terms(df, label='Filter Fall Terms', key='filter_terms'):
     terms = sorted(df['Fall term'].unique())
     selected = st.sidebar.multiselect(label, terms, default=terms, key=key)
     return df[df['Fall term'].isin(selected)], selected
 
-# -- App Configuration ----------------------------------------------------
+# App Configuration
 st.set_page_config(page_title='UC Admissions Data Explorer', layout='wide')
 st.title('📊 UC Admissions Data Explorer')
 st.markdown('Explore trends in UC freshman applications by GPA, demographics, and acceptance rates.')
 
-# -- Tabs Navigation ------------------------------------------------------
+# Tabs Navigation
+st.sidebar.header("Filters")
 tab_gpa, tab_demo, tab_accept, tab_raw = st.tabs([
     'GPA Distribution',
     'Demographics',
@@ -57,33 +57,53 @@ tab_gpa, tab_demo, tab_accept, tab_raw = st.tabs([
     'Raw Data'
 ])
 
-# -- GPA Distribution Tab ------------------------------------------------
+# GPA Distribution Tab
 with tab_gpa:
     st.subheader('📈 GPA Distribution Over Time')
-    df_gpa, years = filter_terms(get_gpa_df(), key='gpa_terms')
-    fig = plot_gpa_distribution(df_gpa, terms=years)
-    st.pyplot(fig)
+    df_gpa = get_gpa_df()
+    years = sorted(df_gpa['Fall term'].unique())
+    year_range = st.slider("Select Year Range", min_value=min(years), max_value=max(years), value=(min(years), max(years)), step=1, key='gpa_year_range')
+    df_gpa = df_gpa[df_gpa['Fall term'].between(*year_range)]
+    fig = plot_gpa_distribution(df_gpa, terms=list(range(*year_range)) if year_range[0] != year_range[1] else [year_range[0]])
+    st.plotly_chart(fig, use_container_width=True)
 
-# -- Demographics Tab -----------------------------------------------------
+# Demographics Tab
 with tab_demo:
-    st.subheader('👥 Applicants by Race/Ethnicity')
-    df_demo, years = filter_terms(get_demo_df(), key='demo_terms')
-    groups = sorted(df_demo['Race/ethnicity'].unique())
-    selected_groups = st.sidebar.multiselect(
-        'Filter Ethnicities', groups, default=groups, key='ethnicity_groups'
-    )
-    df_demo = df_demo[df_demo['Race/ethnicity'].isin(selected_groups)]
-    fig = plot_demographics_distribution(df_demo, terms=years, groups=selected_groups)
-    st.pyplot(fig)
+    df_demo = get_demo_df()
+    years = sorted(df_demo['Fall term'].unique())
+    year_range = st.slider("Select Year Range", min_value=min(years), max_value=max(years), value=(min(years), max(years)), step=1, key='demo_year_range')
+    df_demo = df_demo[df_demo['Fall term'].between(*year_range)]
 
-# -- Acceptance Rate Tab -------------------------------------------------
+    groups = sorted(df_demo['Race/ethnicity'].unique())
+    selected_groups = st.sidebar.multiselect('Filter Ethnicities', groups, default=groups, key='ethnicity_groups')
+    df_demo = df_demo[df_demo['Race/ethnicity'].isin(selected_groups)]
+
+    fig = plot_demographics_distribution(df_demo, terms=list(range(*year_range)) if year_range[0] != year_range[1] else [year_range[0]],groups=selected_groups)
+    st.plotly_chart(fig, use_container_width=True)
+
+# Acceptance Rate Tab 
 with tab_accept:
     st.subheader('📊 Acceptance Rate Over Time')
-    df_acc, years = filter_terms(get_app_admit_df(), key='acceptance_terms')
-    fig = plot_acceptance_rate(df_acc, terms=years)
-    st.pyplot(fig)
+    df = get_app_admit_df()
+    years = sorted(df['Fall term'].unique())
+    year_range = st.slider(
+    "Select Year Range:",
+    min_value=min(years),
+    max_value=max(years),
+    value=(min(years), max(years)),
+    step=1
+    )
+    df_acc = df[df['Fall term'].between(*year_range)]
+    selected_years = df_acc['Fall term'].unique().tolist()
+    fig = plot_acceptance_rate(df_acc, terms=selected_years)
 
-# -- Raw Data Tab ---------------------------------------------------------
+    fig = plot_acceptance_rate(df_acc, terms=years)
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.caption("📉 **2020:** Dip due to COVID-19.")
+    st.caption("📈 **2024:** Record-high admits across the UC system.")
+
+# Raw Data Tab 
 with tab_raw:
     st.subheader('📄 Raw Dataset Preview & Download')
     choice = st.selectbox(
@@ -91,14 +111,14 @@ with tab_raw:
         ['GPA', 'Demographics', 'Applications', 'Applications + Admits'],
         key='raw_choice'
     )
-    if choice == 'GPA':
-        df = get_gpa_df()
-    elif choice == 'Demographics':
-        df = get_demo_df()
-    elif choice == 'Applications':
-        df = get_frosh_app_df()
-    else:
-        df = get_app_admit_df()
+    data_options = {
+    'GPA': get_gpa_df,
+    'Demographics': get_demo_df,
+    'Applications': get_frosh_app_df,
+    'Applications + Admits': get_app_admit_df
+    }
+    df = data_options[choice]()
+
     st.dataframe(df, use_container_width=True)
     csv = df.to_csv(index=False)
     st.download_button(
