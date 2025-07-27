@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt
+
 import plotly.express as px
 from typing import Optional
 import pandas as pd
